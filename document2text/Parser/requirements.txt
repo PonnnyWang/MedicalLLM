@@ -1,0 +1,6 @@
+
+paddleocr # OCR  
+PyMuPDF # 处理 text-PDF 文件
+Image # 处理图像文件
+pdf2image # PDF转图像
+python-docx  # 处理Microsoft Word文件
