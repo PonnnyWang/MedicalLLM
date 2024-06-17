@@ -2,26 +2,25 @@
 解析图片及PDF类型文件：使用layerparser进行布局分析，使用paddleOCR进行文字识别。
 也可以调用ocrAgent中的GCVOCR或TesseractOCR进行文字识别。
 """
-import os
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import fitz
+import cv2
 from docx import Document as DocxDocument
 from PIL import Image
 import layoutparser as lp
 import logging
-from Utils.ocrAgent import PaddleocrAgent
-from Utils.utils import split_long_text, pdf_to_images, save_to_txt, sort_text_blocks
-            
+from Parser.Utils import ocrAgent
+from Parser.Utils import utils
+
 class DocumentExtractor():
-    def __init__(self, ocr_lang, split_length, model_path=None):
+    def __init__(self, ocr_lang, split_length, use_gpu, model_path=None):
         '''
         默认从config中获得模型路径，也可以训练模型手动指定
         '''
         self.ocr_lang = ocr_lang
         self.model_path = model_path
         self.split_length = split_length
+        self.use_gpu = use_gpu
 
     def preprocess_image(self, image):
         # BGR转RGB
@@ -29,7 +28,7 @@ class DocumentExtractor():
         return image
 
     def detect_and_ocr(self, image):
-        ocr_agent = PaddleocrAgent(languages=self.ocr_lang, use_gpu=True, use_angle_cls=True)
+        ocr_agent = ocrAgent.PaddleocrAgent(languages=self.ocr_lang, use_gpu=True, use_angle_cls=True)
         model = lp.PaddleDetectionLayoutModel(model_path=self.model_path, 
                                               config_path="lp://PubLayNet/ppyolov2_r50vd_dcn_365e_publaynet/config",
                                               threshold=0.5,
@@ -41,7 +40,7 @@ class DocumentExtractor():
         text_blocks = lp.Layout([b for b in layout if b.type == 'Text'])
         figure_blocks = lp.Layout([b for b in layout if b.type == 'Figure'])
         text_blocks = lp.Layout([b for b in text_blocks if not any(b.is_in(b_fig) for b_fig in figure_blocks)])
-        text_blocks = sort_text_blocks(text_blocks, image.shape[1])
+        text_blocks = utils.sort_text_blocks(text_blocks, image.shape[1])
         
         ocr_results = []
         for text_block in text_blocks:
@@ -54,7 +53,7 @@ class DocumentExtractor():
 
     def extract_text(self, ocr_results):
         full_text = "".join(ocr_results)
-        split_text = split_long_text(full_text, self.split_length)
+        split_text = utils.split_long_text(full_text, self.split_length)
         return split_text
 
     def extract_image(self, image_path):
@@ -66,7 +65,7 @@ class DocumentExtractor():
         return self.extract_text(ocr_results)
 
     def extract_pdf(self, pdf_path):
-        images = pdf_to_images(pdf_path)
+        images = utils.pdf_to_images(pdf_path)
         ocr_results = []
         for image in images:
             image = self.preprocess_image(image)

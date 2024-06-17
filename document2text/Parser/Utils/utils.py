@@ -11,15 +11,6 @@ import numpy as np
 import cv2
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# def find_tuples_recursive(lst):
-#     tuples = []
-#     for item in lst:
-#         if isinstance(item, tuple):
-#             tuples.append(item)
-#         elif isinstance(item, list):
-#             tuples.extend(find_tuples_recursive(item))
-#     return tuples
-
 def split_long_text(text, split_length):
     '''
         按指定长度截断长文本
@@ -29,6 +20,8 @@ def split_long_text(text, split_length):
     text = re.sub(r'\s+', ' ', text).strip()
     # 去除特殊字符
     text = re.sub(r'[^\w\s\u4e00-\u9fa5,!?;:，。？!；：“”‘’（）《》%]', '', text)
+    if split_length is None:
+        return [text]        
     while len(text) > split_length:
         # 直接按指定长度截断，不考虑标点符号
         split_pos = split_length
@@ -100,7 +93,7 @@ def merge_txt_files(source_dir, output_dir, output_filename):
         for txt_file in txt_files:
             with open(txt_file, 'r', encoding='utf-8') as infile:
                 outfile.write(infile.read())
-                outfile.write('\n')  # 添加一个换行符以分隔不同.txt文件的内容       
+                outfile.write('')       
                 
 def unzip_file(zip_file_path):
     # 解压zip文件：处理中文压缩包时会乱码
