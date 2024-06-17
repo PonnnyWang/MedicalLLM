@@ -6,11 +6,14 @@
 1. **PaddlePadlle**
    * pip安装：
       CUDA11.8以上
-        > python -m pip install paddlepaddle-gpu==2.6.1 -i https://mirror.baidu.com/pypi/simple
-
+      ```
+        python -m pip install paddlepaddle-gpu==2.6.1 -i https://mirror.baidu.com/pypi/simple
+      ```
    * conda安装：
        CUDA11.7以上
-       > conda install paddlepaddle-gpu==2.6.1 cudatoolkit=11.7 -c https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/Paddle/ -c conda-forge
+       ```
+       conda install paddlepaddle-gpu==2.6.1 cudatoolkit=11.7 -c https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/Paddle/ -c conda-forge
+       ```
    * 其它CUDA版本请查看：[PaddlePaddle安装](https://www.paddlepaddle.org.cn/en/install/quick?docurl=/documentation/docs/en/install/pip/linux-pip_en.html)
 2. **layoutparser**
    * 快速安装：
