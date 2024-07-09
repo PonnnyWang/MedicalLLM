@@ -1,73 +1,41 @@
 """
-解析图片及PDF类型文件：使用layerparser进行布局分析，使用paddleOCR进行文字识别。
+解析图片及PDF类型文件：使用YOLOv8训练的版面分析模型，使用paddleOCR进行文字识别。
 也可以调用ocrAgent中的GCVOCR或TesseractOCR进行文字识别。
 """
-
-import fitz
 import cv2
-from docx import Document as DocxDocument
-from PIL import Image
-import layoutparser as lp
-import logging
 from Parser.Utils import ocrAgent
 from Parser.Utils import utils
+from ultralytics import YOLO
 
 class DocumentExtractor():
-    def __init__(self, ocr_lang, split_length, use_gpu, model_path=None):
-        '''
-        默认从config中获得模型路径，也可以训练模型手动指定
-        '''
-        self.ocr_lang = ocr_lang
+    def __init__(self, model_path, ocr_lang):
         self.model_path = model_path
-        self.split_length = split_length
-        self.use_gpu = use_gpu
+        self.ocr_lang = ocr_lang
 
-    def preprocess_image(self, image):
-        # BGR转RGB
-        image = image[..., ::-1]
-        return image
-
-    def detect_and_ocr(self, image):
+    def detect_and_ocr(self, images):   
+        threshold = 35  # 设置字符数阈值
         ocr_agent = ocrAgent.PaddleocrAgent(languages=self.ocr_lang, use_gpu=True, use_angle_cls=True)
-        model = lp.PaddleDetectionLayoutModel(model_path=self.model_path, 
-                                              config_path="lp://PubLayNet/ppyolov2_r50vd_dcn_365e_publaynet/config",
-                                              threshold=0.5,
-                                              label_map={0: "Text", 1: "Title", 2: "List", 3: "Table", 4: "Figure"},
-                                              enforce_cpu=False,
-                                              enable_mkldnn=True)
-        # 布局分析, 提取文本块
-        layout = model.detect(image)
-        text_blocks = lp.Layout([b for b in layout if b.type == 'Text'])
-        figure_blocks = lp.Layout([b for b in layout if b.type == 'Figure'])
-        text_blocks = lp.Layout([b for b in text_blocks if not any(b.is_in(b_fig) for b_fig in figure_blocks)])
-        text_blocks = utils.sort_text_blocks(text_blocks, image.shape[1])
-        
+        model = YOLO(self.model_path)    # 版面分析模型
         ocr_results = []
-        for text_block in text_blocks:
-            x1, y1, x2, y2 = map(int, text_block.coordinates)
-            image_segment = image[y1:y2, x1:x2]
-            text = ocr_agent.detect(image_segment)
-            if len(text.replace(" ", "")) >= 40:  
-                ocr_results.append(text)      
+        for image in images:
+            results = model(image, save_txt=False)    
+            # 提取类别为 'Text' 的边界框， cls 属性为 1 
+            boxes = results[0].boxes
+            text_boxes = boxes.xyxy[boxes.cls == 1]
+            text_blocks = utils.sort_text_blocks(text_boxes, image.shape[1])        
+            for text_block in text_blocks:
+                x1, y1, x2, y2 = map(int, text_block)             
+                image_segment = image[y1:y2, x1:x2]     # 从原图中裁剪文本区域
+                text = ocr_agent.detect(image_segment) 
+                if len(text.replace(" ", "")) >= threshold:  
+                    ocr_results.append(text)               
         return ocr_results
-
-    def extract_text(self, ocr_results):
-        full_text = "".join(ocr_results)
-        split_text = utils.split_long_text(full_text, self.split_length)
-        return split_text
 
     def extract_image(self, image_path):
         images = cv2.imread(image_path)
-        ocr_results = []
-        for image in images:
-            image = self.preprocess_image(image)
-            ocr_results.extend(self.detect_and_ocr(image))
-        return self.extract_text(ocr_results)
+        return self.detect_and_ocr(images)
 
     def extract_pdf(self, pdf_path):
-        images = utils.pdf_to_images(pdf_path)
-        ocr_results = []
-        for image in images:
-            image = self.preprocess_image(image)
-            ocr_results.extend(self.detect_and_ocr(image))
-        return self.extract_text(ocr_results)
+        images = utils.pdf_to_images(pdf_path)    
+        return self.detect_and_ocr(images)
+

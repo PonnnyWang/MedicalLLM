@@ -2,14 +2,12 @@ import os
 import sys
 import fitz
 from PIL import Image
-import io
 import json
 import logging
 import re
 import zipfile
 import numpy as np
 import cv2
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def split_long_text(text, split_length):
     '''
@@ -31,6 +29,9 @@ def split_long_text(text, split_length):
     return lines
 
 def pdf_to_images(pdf_path):
+    '''
+    pdf转换为png，dpi调整识别图像分辨率，越高的分辨率ocr效果更好
+    '''
     doc = fitz.open(pdf_path)
     images = []
     for page_num in range(doc.page_count):
@@ -38,26 +39,28 @@ def pdf_to_images(pdf_path):
         pix = page.get_pixmap(dpi=500)
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         img = np.array(img)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         images.append(img)
     return images
 
-def sort_text_blocks(text_blocks, image_width):
-    """
+def sort_text_blocks(text_boxes, image_width):
+    '''
     对PDF文本区域按顺序排序
-    """
+    '''   
+    text_blocks = text_boxes.tolist()   # Tensor2list
+
     left_blocks = []
     right_blocks = []
+
     for block in text_blocks:
-        x_center = (block.coordinates[0] + block.coordinates[2]) / 2
+        x_center = (block[0] + block[2]) / 2  # block:[x1, y1, x2, y2]
         if x_center < image_width / 2:
             left_blocks.append(block)
         else:
             right_blocks.append(block)
-    # 对每组内的文本区域按照自上而下的顺序进行排序
-    left_blocks_sorted = sorted(left_blocks, key=lambda b: b.coordinates[1])
-    right_blocks_sorted = sorted(right_blocks, key=lambda b: b.coordinates[1])
-    # 将左半部分的文本区域放在前面，然后是右半部分的文本区域
+
+    left_blocks_sorted = sorted(left_blocks, key=lambda b: b[1])
+    right_blocks_sorted = sorted(right_blocks, key=lambda b: b[1])
+
     return left_blocks_sorted + right_blocks_sorted
 
 def save_to_txt(text, file_path, output_path):
