@@ -9,7 +9,7 @@ from dotenv import load_dotenv, find_dotenv
 import argparse
 from openai import OpenAI
 
-_ = load_dotenv(find_dotenv()) # read local .env file
+_ = load_dotenv(find_dotenv()) 
 openai.api_key  = os.getenv('OPENAI_API_KEY')
 
 random.seed(13)
@@ -26,13 +26,7 @@ class DialogueGenerator:
     def generate_dialogue(self, system_input: str, user_input: str) -> str:
         """使用指定模型生成对话"""
         try:
-            client = OpenAI(
-            # api_key="sk-1yJfl7LSgUKGIBxKdBJ3HDcm6vCd7uhUow2RRTr2ZE4yjUFL",
-            # base_url="https://api.chatanywhere.tech/v1"
-            api_key="sk-8md7idZ8Xq68FOZNBdAb823e9cAf4d51B1377748BdDd7c38",
-            base_url="https://api.claudeshop.top/v1"
-            )
-            response = client.chat.completions.create(
+            response = openai.chat.completions.create(
                 model=self.model,
                 temperature=0.7,
                 messages=[
