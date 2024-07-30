@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class DialogueGenerator:
     def __init__(self, model: str = "gpt-4"): # gpt-3.5-turbo-0613/gpt-4
         self.model = model
-        self.task_id_generator = task_id_generator_function()
+        self.task_id_generator = task_id_generator()
         self.context = {}  
     
     def generate_dialogue(self, system_input: str, user_input: str) -> str:
