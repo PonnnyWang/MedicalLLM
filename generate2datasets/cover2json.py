@@ -1,7 +1,7 @@
 import json
 import tiktoken
 
-def convert_txt_to_json(input_file, save_path, model_name):
+def convert_txt_to_jsonl(input_file, save_path, model_name):
     '''
     txt文件转换为json文件并计算token
     '''
@@ -16,14 +16,17 @@ def convert_txt_to_json(input_file, save_path, model_name):
                 entries.append(entry)
 
     with open(save_path, 'w', encoding='utf-8') as json_file:
-        json.dump(entries, json_file, ensure_ascii=False, indent=2)
+        for entrie in entries:
+            json.dump(entrie, json_file, ensure_ascii=False, indent=None)
+            json_file.write("\n")
+        
 
 if __name__ == "__main__":
     input_file = r"/root/LLMproject/MedicalLLM/data/TxtWithOutput/中国康复医学杂志.txt"
-    save_path = r"/root/LLMproject/MedicalLLM/data/TxtWithOutput/中国康复医学杂志.json"
+    save_path = r"/root/LLMproject/MedicalLLM/data/TxtWithOutput/中国康复医学杂志.jsonl"
 
-    model_name = "gpt-3.5-turbo-0613"  
-    convert_txt_to_json(input_file, save_path, model_name)
+    model_name = "gpt-4o-mini"  
+    convert_txt_to_jsonl(input_file, save_path, model_name)
 
     # model_name in {  
     #         "gpt-3.5-turbo-0613",  

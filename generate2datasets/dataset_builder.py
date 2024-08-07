@@ -10,7 +10,7 @@ def convert_to_sharegpt(data):
     sharegpt_data = []
     for item in data:
         task_id = item["id"]
-        dialogue = item["dialogue"].split("\n")
+        dialogue = re.split(r'(?<!\n)\n(?!\n)|(?<=\n\n)(?=<)', item["dialogue"])
         conversation = []
         try:
             for line in dialogue:
@@ -82,6 +82,6 @@ if __name__ == "__main__":
                         help="instruction datasets file is saved to")
     parser.add_argument("--data_format", type=str, default="sharegpt", \
                         help="The format of the dataset, choose sharegpt or alpaca")
-    
+
     args = parser.parse_args()
     save_file(args)
