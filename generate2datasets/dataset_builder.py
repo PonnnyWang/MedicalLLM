@@ -31,8 +31,8 @@ def convert_to_alpaca(data):
         task_id = item["id"]
         dialogue = item["dialogue"].split("\n")
         history = []
-        instruction = "请以专业的医学知识进行回答。"
-        system = "要求你作为聊天机器人Assistant与人类Human进行多轮对话。"
+        instruction = "要求你作为聊天机器人Assistant与人类Human进行多轮对话, 请以专业的医学知识进行回答。"
+        system = ""
         last_human = ""
         last_assistant = ""
         try:
